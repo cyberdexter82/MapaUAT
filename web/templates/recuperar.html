@@ -1,0 +1,48 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Restablecer Contraseña</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; padding: 0; font-family: 'Poppins', sans-serif; background: #f4f4f4; display: flex; justify-content: center; align-items: center; height: 100vh; }
+    .container { background: white; padding: 40px; border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.1); width: 100%; max-width: 400px; text-align: center; border-top: 6px solid #d32f2f; }
+    h2 { color: #d32f2f; margin-bottom: 20px; }
+    p { color: #666; font-size: 0.9rem; margin-bottom: 20px; }
+    input { width: 100%; padding: 12px; margin: 10px 0; border: 1px solid #ccc; border-radius: 8px; box-sizing: border-box; }
+    button { width: 100%; padding: 12px; background: #d32f2f; color: white; border: none; border-radius: 50px; font-weight: bold; cursor: pointer; margin-top: 10px; }
+    button:hover { background: #b71c1c; }
+    .error-msg { background: #ffebee; color: #c62828; padding: 10px; border-radius: 5px; margin-bottom: 15px; border: 1px solid #ffcdd2; }
+    .back-link { display: block; margin-top: 20px; text-decoration: none; color: #555; font-size: 0.9rem; }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <h2>Restablecer Contraseña</h2>
+  <p>Ingresa tu matrícula y correo registrado para verificar tu identidad y crear una nueva clave.</p>
+
+  {% if error %}
+    <div class="error-msg">{{ error }}</div>
+  {% endif %}
+
+  <form method="POST">
+    {% csrf_token %}
+    <input type="text" name="matricula" placeholder="Matrícula" required>
+    <input type="email" name="correo" placeholder="Correo Institucional" required>
+    
+    <hr style="margin: 20px 0; border: 0; border-top: 1px solid #eee;">
+    
+    <input type="password" name="password" placeholder="Nueva Contraseña" required>
+    <input type="password" name="confirmar" placeholder="Confirmar Nueva Contraseña" required>
+
+    <button type="submit">Guardar Nueva Contraseña</button>
+  </form>
+
+  <a href="{% url 'login' %}" class="back-link">Cancelar y volver al Login</a>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,69 @@
+{% extends "admin/change_form.html" %}
+{% load static %}
+
+{% block after_field_sets %}
+    <!-- ESTE ES TU MAPA INTERACTIVO PARA EL ADMIN -->
+    <div style="margin: 20px 0; padding: 20px; background: #f9f9f9; border: 1px solid #ddd; border-radius: 10px;">
+        <h2 style="margin-bottom: 10px; color: #666;">📍 Selector de Coordenadas Visual</h2>
+        <p style="font-size: 12px; color: #888; margin-bottom: 15px;">
+            Haz clic sobre el mapa para colocar el punto automáticamente. 
+            El pin naranja muestra la posición actual.
+        </p>
+
+        <div style="position: relative; display: inline-block; cursor: crosshair; border: 4px solid #333;">
+            <!-- IMAGEN DEL MAPA -->
+            <img id="admin-map-img" src="{% static 'img/MAPAUAM.jpeg' %}" 
+                 style="width: 100%; max-width: 900px; display: block;">
+            
+            <!-- EL PIN VISUAL (Naranja) -->
+            <div id="admin-pin" 
+                 style="position: absolute; width: 20px; height: 20px; background: #ff9800; 
+                        border: 2px solid white; border-radius: 50%; transform: translate(-50%, -50%);
+                        box-shadow: 0 0 5px rgba(0,0,0,0.5); pointer-events: none; display: none;">
+            </div>
+        </div>
+    </div>
+
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const mapImg = document.getElementById('admin-map-img');
+            const pin = document.getElementById('admin-pin');
+            
+            // Campos de Django (inputs donde se guardan los números)
+            const inputX = document.getElementById('id_pos_x');
+            const inputY = document.getElementById('id_pos_y');
+
+            // Función para mover el pin visualmente
+            function moverPin(x, y) {
+                if (x && y) {
+                    pin.style.left = x + '%';
+                    pin.style.top = y + '%';
+                    pin.style.display = 'block';
+                }
+            }
+
+            // 1. Si ya hay coordenadas guardadas, mostrar el pin al cargar
+            if (inputX.value && inputY.value) {
+                moverPin(inputX.value, inputY.value);
+            }
+
+            // 2. Al hacer clic en el mapa
+            mapImg.addEventListener('click', function(e) {
+                // Calculamos la posición relativa en porcentaje
+                const rect = mapImg.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const porcX = Math.round((x / rect.width) * 100);
+                const porcY = Math.round((y / rect.height) * 100);
+
+                // Guardamos en los inputs de Django
+                inputX.value = porcX;
+                inputY.value = porcY;
+
+                // Movemos el pin visual
+                moverPin(porcX, porcY);
+            });
+        });
+    </script>
+{% endblock %}

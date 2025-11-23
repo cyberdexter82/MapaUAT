@@ -1,0 +1,203 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Instrucciones - Mapa UAM Mante</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    /* === ESTILOS GENERALES === */
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #ffffff 60%, #00214710 100%); color: #333; display: flex; flex-direction: column; align-items: center; min-height: 100vh; }
+
+    /* === NAVBAR === */
+    nav { width: 100%; display: flex; justify-content: flex-end; padding: 20px 40px; background: white; box-shadow: 0 2px 10px rgba(0,0,0,0.05); position: relative; z-index: 20; align-items: center;}
+    nav a { text-decoration: none; color: #002147; font-weight: 600; margin-left: 30px; font-size: 1rem; transition: color 0.3s ease; }
+    nav a:hover { color: #f9b233; }
+    .user-badge { background: #e3f2fd; padding: 5px 12px; border-radius: 20px; font-size: 0.9rem; color: #0d47a1; margin-left: 20px; }
+
+    /* === CONTENEDOR INTERACTIVO === */
+    .main-wrapper { display: flex; flex-direction: column; align-items: center; padding: 40px 20px; width: 100%; }
+    
+    h1 { color: #002147; font-size: 2.2rem; margin-bottom: 10px; text-align: center; }
+    p.desc { color: #555; font-size: 1.1rem; margin-bottom: 30px; text-align: center; max-width: 700px; }
+
+    /* === EL MAPA === */
+    .map-container {
+      position: relative; /* Clave para los puntos absolutos */
+      display: inline-block;
+      width: 100%;
+      max-width: 1000px; /* Tamaño máximo del mapa */
+      border-radius: 20px;
+      overflow: hidden;
+      box-shadow: 0 15px 40px rgba(0,0,0,0.2);
+      border: 4px solid #f9b233;
+    }
+
+    .map-image {
+      width: 100%;
+      height: auto;
+      display: block;
+      transition: transform 0.3s ease;
+    }
+
+    /* === LOS PUNTOS INTERACTIVOS (HOTSPOTS) === */
+    .hotspot {
+      position: absolute;
+      width: 30px;
+      height: 30px;
+      background-color: #d32f2f; /* Color del punto */
+      border: 3px solid white;
+      border-radius: 50%;
+      cursor: pointer;
+      box-shadow: 0 4px 10px rgba(0,0,0,0.4);
+      transition: transform 0.2s, background-color 0.2s;
+      z-index: 2;
+      
+      /* Icono de signo de más o info */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      color: white;
+      font-weight: bold;
+      font-family: sans-serif;
+    }
+
+    .hotspot::after { content: '?'; }
+
+    .hotspot:hover {
+      transform: scale(1.3);
+      background-color: #f9b233;
+      z-index: 3;
+    }
+
+    /* Animación de pulso para llamar la atención */
+    @keyframes pulse {
+      0% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0.7); }
+      70% { box-shadow: 0 0 0 15px rgba(211, 47, 47, 0); }
+      100% { box-shadow: 0 0 0 0 rgba(211, 47, 47, 0); }
+    }
+    .hotspot { animation: pulse 2s infinite; }
+
+    /* === VENTANA MODAL (Información) === */
+    .modal-overlay {
+      position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: none; /* Oculto por defecto */
+      justify-content: center; align-items: center; z-index: 1000;
+      backdrop-filter: blur(5px);
+    }
+
+    .modal-content {
+      background: white; padding: 30px; border-radius: 20px; width: 90%; max-width: 400px;
+      text-align: center; position: relative;
+      box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+      border-top: 6px solid #f9b233;
+      animation: slideUp 0.3s ease;
+    }
+
+    @keyframes slideUp { from { transform: translateY(50px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+
+    .modal-close {
+      position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; color: #888;
+    }
+    .modal-close:hover { color: #d32f2f; }
+
+    .btn-go {
+      background: #002147; color: white; padding: 10px 25px; border-radius: 30px; text-decoration: none;
+      display: inline-block; margin-top: 15px; font-weight: bold;
+    }
+    .btn-go:hover { background: #f9b233; color: #002147; }
+
+    @media (max-width: 768px) {
+      nav { justify-content: center; flex-wrap: wrap; padding: 10px; }
+      nav a { margin: 5px 10px; }
+      .hotspot { width: 25px; height: 25px; font-size: 0.8rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- BARRA -->
+  <nav>
+    <a href="{% url 'home' %}">Inicio</a>
+    <a href="{% url 'instrucciones' %}" style="color: #f9b233;">Instrucciones</a>
+    <a href="{% url 'invitado' %}">Invitado</a>
+    {% if user.is_authenticated %}
+        <span class="user-badge">Hola, {{ user.first_name }}</span>
+        <a href="{% url 'perfil' %}">Mi Perfil</a>
+        <a href="{% url 'logout' %}" style="color: #d32f2f;">Salir</a>
+    {% else %}
+        <a href="{% url 'registro' %}">Registrarse</a>
+        <a href="{% url 'login' %}">Entrar</a>
+    {% endif %}
+  </nav>
+
+  <div class="main-wrapper">
+    <h1>Mapa Interactivo</h1>
+    <p class="desc">
+      Toca los <b>puntos rojos</b> sobre el mapa para ver información de cada edificio.<br>
+      Si estás listo, pulsa el botón final para entrar a la experiencia completa.
+    </p>
+
+    <!-- CONTENEDOR DEL MAPA -->
+    <div class="map-container">
+      <!-- IMAGEN DEL MAPA -->
+      <img src="{% static 'img/MAPAUAM.jpeg' %}" alt="Mapa UAM" class="map-image">
+
+      <!-- PUNTOS INTERACTIVOS (Ajusta 'top' y 'left' para moverlos) -->
+      
+      <!-- PUNTO 1: Cancha / Gimnasio (Ejemplo) -->
+      <div class="hotspot" style="top: 70%; left: 15%;" 
+           onclick="openModal('Canchas Deportivas', 'Aquí se realizan los torneos de la universidad. Cuenta con gradas y techo.')"></div>
+
+      <!-- PUNTO 2: Edificio Central (Ejemplo) -->
+      <div class="hotspot" style="top: 40%; left: 45%;" 
+           onclick="openModal('Edificio Administrativo', 'Aquí encontrarás la dirección, control escolar y cajas.')"></div>
+
+      <!-- PUNTO 3: Laboratorios (Ejemplo) -->
+      <div class="hotspot" style="top: 20%; left: 80%;" 
+           onclick="openModal('Laboratorios', 'Espacio equipado con alta tecnología para prácticas de ingeniería y salud.')"></div>
+
+    </div>
+
+    <!-- BOTÓN FINAL PARA IR AL MAPA "REAL" (Opcional, si el de arriba es solo instrucciones) -->
+    <div style="margin-top: 40px;">
+        <a href="{% url 'mapa' %}" class="btn-go" style="font-size: 1.2rem; padding: 15px 40px;">Entrar al Sistema Completo</a>
+    </div>
+  </div>
+
+  <!-- VENTANA MODAL (Oculta hasta que se hace clic) -->
+  <div class="modal-overlay" id="infoModal">
+    <div class="modal-content">
+      <span class="modal-close" onclick="closeModal()">&times;</span>
+      <h2 id="modalTitle" style="color:#002147; margin-bottom:10px;">Título</h2>
+      <p id="modalDesc" style="color:#555; line-height:1.6;">Descripción</p>
+      <button onclick="closeModal()" class="btn-go" style="background:#f9b233; color:#002147; border:none; cursor:pointer;">Cerrar</button>
+    </div>
+  </div>
+
+  <!-- JAVASCRIPT PARA LA INTERACCIÓN -->
+  <script>
+    function openModal(title, desc) {
+      document.getElementById('modalTitle').innerText = title;
+      document.getElementById('modalDesc').innerText = desc;
+      document.getElementById('infoModal').style.display = 'flex';
+    }
+
+    function closeModal() {
+      document.getElementById('infoModal').style.display = 'none';
+    }
+
+    // Cerrar si hacen clic fuera del cuadro blanco
+    window.onclick = function(event) {
+      var modal = document.getElementById('infoModal');
+      if (event.target == modal) {
+        modal.style.display = "none";
+      }
+    }
+  </script>
+
+</body>
+</html>

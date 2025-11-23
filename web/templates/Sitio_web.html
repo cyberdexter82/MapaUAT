@@ -1,0 +1,305 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sistema de Ubicación UAM</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+    body { background-color: #eef2f5; height: 100vh; display: flex; flex-direction: column; overflow: hidden; }
+
+    /* BARRA SUPERIOR */
+    header {
+        background: white; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.05); z-index: 20;
+    }
+    .logo-area { font-weight: 700; color: #002147; font-size: 1.3rem; display: flex; align-items: center; gap: 10px; }
+    .btn-back { text-decoration: none; color: #555; font-weight: 600; padding: 8px 15px; border-radius: 20px; transition: 0.3s; }
+    .btn-back:hover { background: #f0f0f0; color: #002147; }
+
+    /* CONTROLES DE RUTA */
+    .route-controls {
+        background: white; padding: 15px; display: flex; gap: 15px; align-items: center; justify-content: center;
+        border-bottom: 1px solid #ddd; z-index: 15; box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        flex-wrap: wrap;
+    }
+    select { padding: 8px; border-radius: 5px; border: 1px solid #ccc; font-family: inherit; min-width: 200px; }
+    .btn-route { background: #002147; color: white; border: none; padding: 8px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; transition: 0.3s; }
+    .btn-route:hover { background: #f9b233; color: #002147; }
+    .btn-clear { background: #e0e0e0; color: #333; border: none; padding: 8px 15px; border-radius: 5px; cursor: pointer; margin-left: 10px; transition: 0.3s; }
+    .btn-clear:hover { background: #ccc; }
+
+    /* MAPA */
+    .map-viewport {
+        flex-grow: 1;
+        overflow: auto;
+        position: relative;
+        background: #ddd;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: grab;
+    }
+    .map-viewport:active { cursor: grabbing; }
+    
+    .map-container {
+        position: relative;
+        width: 1200px; /* Ancho fijo para mantener coordenadas precisas */
+        box-shadow: 0 0 30px rgba(0,0,0,0.15);
+    }
+
+    .map-img { width: 100%; display: block; pointer-events: none; user-select: none; }
+
+    /* CAPA SVG PARA RUTAS */
+    #ruta-svg {
+        position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 4;
+    }
+    
+    /* Estilo de la línea de ruta */
+    .path-line {
+        fill: none;
+        stroke: #d32f2f; /* Rojo UAM */
+        stroke-width: 6;
+        stroke-dasharray: 12, 12;
+        stroke-linecap: round;
+        stroke-linejoin: round;
+        animation: dash 40s linear infinite; /* Animación lenta de flujo */
+        filter: drop-shadow(0px 0px 2px white);
+        opacity: 0.9;
+    }
+    
+    @keyframes dash {
+        to { stroke-dashoffset: -1000; }
+    }
+
+    /* PINES */
+    .pin {
+        position: absolute; width: 32px; height: 32px;
+        background: #d32f2f; border: 3px solid white; border-radius: 50% 50% 50% 0;
+        transform: rotate(-45deg) translate(-50%, -100%); transform-origin: 0% 0%;
+        box-shadow: 3px 3px 10px rgba(0,0,0,0.3); cursor: pointer; z-index: 10; transition: transform 0.2s;
+    }
+    .pin:hover { transform: rotate(-45deg) scale(1.2) translate(-50%, -100%); z-index: 20; background: #f9b233 !important; }
+
+    /* PANEL LATERAL */
+    .info-panel {
+        position: absolute; top: 140px; right: 20px; width: 320px;
+        background: white; padding: 25px; border-radius: 15px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        transform: translateX(120%); transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        z-index: 100; border-left: 5px solid #f9b233;
+    }
+    .info-panel.active { transform: translateX(0); }
+    .close-btn { position: absolute; top: 10px; right: 15px; font-size: 1.5rem; cursor: pointer; color: #999; }
+    .close-btn:hover { color: #d32f2f; }
+    
+    h2 { margin: 0 0 10px; font-size: 1.4rem; color: #002147; }
+    p { color: #666; line-height: 1.5; font-size: 0.95rem; margin-bottom: 15px; }
+    .ruta-box { background: #f0f7ff; padding: 12px; border-radius: 8px; font-size: 0.9rem; color: #0d47a1; border: 1px solid #bbdefb; }
+
+    @media (max-width: 768px) {
+        .route-controls { flex-direction: column; align-items: stretch; }
+        .btn-route, .btn-clear { width: 100%; margin: 5px 0; }
+        select { width: 100%; }
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <a href="{% url 'instrucciones' %}" class="btn-back">← Volver</a>
+    <div class="logo-area">📍 Sistema de Ubicación UAM</div>
+    <div style="font-size: 0.9rem; color: #777;">
+        {% if user.is_authenticated %}
+            Hola, {{ user.first_name }}
+        {% else %}
+            Hola, Invitado
+        {% endif %}
+    </div>
+  </header>
+
+  <!-- BARRA DE RUTA -->
+  <div class="route-controls">
+      <div style="display: flex; gap: 10px; align-items: center; flex-grow: 1; justify-content: center; flex-wrap: wrap;">
+          <label><b>Ir desde:</b></label>
+          <select id="startPoint">
+              <option value="">-- Selecciona Origen --</option>
+              {% for punto in puntos %}
+                <option value="{{ punto.id }}" data-x="{{ punto.pos_x }}" data-y="{{ punto.pos_y }}">
+                    {{ punto.nombre }}
+                </option>
+              {% endfor %}
+          </select>
+
+          <label><b>Hasta:</b></label>
+          <select id="endPoint">
+              <option value="">-- Selecciona Destino --</option>
+              {% for punto in puntos %}
+                <option value="{{ punto.id }}" data-x="{{ punto.pos_x }}" data-y="{{ punto.pos_y }}">
+                    {{ punto.nombre }}
+                </option>
+              {% endfor %}
+          </select>
+      </div>
+
+      <div style="display: flex; gap: 10px;">
+          <button onclick="trazarRuta()" class="btn-route">Trazar Ruta</button>
+          <button onclick="limpiarRuta()" class="btn-clear">Borrar</button>
+      </div>
+  </div>
+
+  <div class="map-viewport" id="viewport">
+    <div class="map-container" id="map">
+      
+      <!-- IMAGEN NUEVA DEL MAPA LIMPIO -->
+      <!-- Asegúrate de guardar la imagen 95399.jpg como MAPA_FINAL.jpg -->
+      <img src="{% static 'img/MAPA_FINAL.jpg' %}" 
+           class="map-img" 
+           onerror="this.src='{% static 'img/MAPAUAM.jpeg' %}'"
+           alt="Mapa del Campus">
+
+      <!-- CAPA SVG -->
+      <svg id="ruta-svg">
+          <polyline id="poly-ruta" points="" class="path-line" style="display: none;" />
+          <circle id="circulo-inicio" cx="0" cy="0" r="8" fill="#002147" style="display: none;" />
+          <circle id="circulo-fin" cx="0" cy="0" r="8" fill="#f9b233" style="display: none;" />
+      </svg>
+
+      <!-- PINES DINÁMICOS -->
+      {% for punto in puntos %}
+        <div class="pin" 
+             style="left: {{ punto.pos_x }}%; top: {{ punto.pos_y }}%; background-color: {{ punto.color }};"
+             onclick="verInfo('{{ punto.nombre }}', '{{ punto.descripcion|escapejs }}', '{{ punto.como_llegar|escapejs }}')">
+        </div>
+      {% endfor %}
+
+    </div>
+  </div>
+
+  <!-- PANEL DE INFORMACIÓN -->
+  <div class="info-panel" id="panel">
+    <span class="close-btn" onclick="cerrarPanel()">&times;</span>
+    <h2 id="pTitulo">Título</h2>
+    <p id="pDesc">Descripción...</p>
+    <div class="ruta-box" id="pRutaBox" style="display:none;">
+        <strong>👣 Cómo llegar:</strong><br>
+        <span id="pRuta">...</span>
+    </div>
+  </div>
+
+  <script>
+    /* ==========================================
+       SISTEMA DE RUTAS "MANHATTAN" (Pasillos)
+       ========================================== */
+    
+    function obtenerCoordenadas(idSelect) {
+        const sel = document.getElementById(idSelect);
+        const opt = sel.options[sel.selectedIndex];
+        if(!opt.value) return null;
+        return { 
+            x: parseFloat(opt.getAttribute('data-x')), 
+            y: parseFloat(opt.getAttribute('data-y')) 
+        };
+    }
+
+    function calcularRutaInteligente(p1, p2) {
+        let camino = [];
+        camino.push(p1); 
+
+        const Y_PASILLO_ARRIBA = 28;
+        const Y_PASILLO_ABAJO = 65;
+        const CRUCES_X = [28, 40, 55, 70, 82]; 
+
+        const y1_target = (p1.y < 47) ? Y_PASILLO_ARRIBA : Y_PASILLO_ABAJO;
+        const y2_target = (p2.y < 47) ? Y_PASILLO_ARRIBA : Y_PASILLO_ABAJO;
+
+        camino.push({ x: p1.x, y: y1_target });
+
+        if (y1_target === y2_target) {
+            camino.push({ x: p2.x, y: y2_target });
+        } else {
+            const promedioX = (p1.x + p2.x) / 2;
+            let mejorCruceX = CRUCES_X[0];
+            let menorDiferencia = Math.abs(promedioX - CRUCES_X[0]);
+
+            for (let cruce of CRUCES_X) {
+                let diff = Math.abs(promedioX - cruce);
+                if (diff < menorDiferencia) {
+                    menorDiferencia = diff;
+                    mejorCruceX = cruce;
+                }
+            }
+
+            camino.push({ x: mejorCruceX, y: y1_target });
+            camino.push({ x: mejorCruceX, y: y2_target });
+            camino.push({ x: p2.x, y: y2_target });
+        }
+
+        camino.push(p2);
+        return camino;
+    }
+
+    function trazarRuta() {
+        const p1 = obtenerCoordenadas('startPoint');
+        const p2 = obtenerCoordenadas('endPoint');
+
+        if (!p1 || !p2) { alert("Selecciona origen y destino"); return; }
+        if (p1.x === p2.x && p1.y === p2.y) { alert("Origen y destino son iguales"); return; }
+
+        const ruta = calcularRutaInteligente(p1, p2);
+        const mapW = document.getElementById('map').offsetWidth;
+        const mapH = document.getElementById('map').offsetHeight;
+        
+        let pointsStr = "";
+        ruta.forEach(p => {
+            const px = (p.x / 100) * mapW;
+            const py = (p.y / 100) * mapH;
+            pointsStr += `${px},${py} `;
+        });
+
+        const polyline = document.getElementById('poly-ruta');
+        polyline.setAttribute('points', pointsStr);
+        polyline.style.display = 'block';
+
+        const c1 = document.getElementById('circulo-inicio');
+        const c2 = document.getElementById('circulo-fin');
+        
+        c1.setAttribute('cx', (p1.x/100)*mapW); c1.setAttribute('cy', (p1.y/100)*mapH); c1.style.display = 'block';
+        c2.setAttribute('cx', (p2.x/100)*mapW); c2.setAttribute('cy', (p2.y/100)*mapH); c2.style.display = 'block';
+
+        cerrarPanel();
+    }
+
+    function limpiarRuta() {
+        document.getElementById('poly-ruta').style.display = 'none';
+        document.getElementById('circulo-inicio').style.display = 'none';
+        document.getElementById('circulo-fin').style.display = 'none';
+        document.getElementById('startPoint').value = "";
+        document.getElementById('endPoint').value = "";
+    }
+
+    function verInfo(titulo, desc, ruta) {
+        document.getElementById('pTitulo').innerText = titulo;
+        document.getElementById('pDesc').innerText = desc;
+        if(ruta) {
+            document.getElementById('pRuta').innerText = ruta;
+            document.getElementById('pRutaBox').style.display = 'block';
+        } else {
+            document.getElementById('pRutaBox').style.display = 'none';
+        }
+        document.getElementById('panel').classList.add('active');
+    }
+    function cerrarPanel() { document.getElementById('panel').classList.remove('active'); }
+
+    const slider = document.getElementById('viewport');
+    let isDown = false; let startX, startY, scrollLeft, scrollTop;
+    slider.addEventListener('mousedown', (e) => { isDown = true; slider.classList.add('active'); startX = e.pageX - slider.offsetLeft; startY = e.pageY - slider.offsetTop; scrollLeft = slider.scrollLeft; scrollTop = slider.scrollTop; });
+    slider.addEventListener('mouseleave', () => { isDown = false; slider.classList.remove('active'); });
+    slider.addEventListener('mouseup', () => { isDown = false; slider.classList.remove('active'); });
+    slider.addEventListener('mousemove', (e) => { if(!isDown) return; e.preventDefault(); const x = e.pageX - slider.offsetLeft; const y = e.pageY - slider.offsetTop; const walkX = (x - startX) * 1.5; const walkY = (y - startY) * 1.5; slider.scrollLeft = scrollLeft - walkX; slider.scrollTop = scrollTop - walkY; });
+  </script>
+
+</body>
+</html>

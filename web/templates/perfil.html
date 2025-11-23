@@ -1,0 +1,107 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Mi Perfil</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body { margin: 0; padding: 40px 20px; font-family: 'Poppins', sans-serif; background: linear-gradient(135deg, #fdfdfd, #f4f4f4); display: flex; justify-content: center; min-height: 100vh; }
+    
+    .profile-container { 
+        background: white; 
+        width: 100%; 
+        max-width: 800px; 
+        border-radius: 20px; 
+        box-shadow: 0 10px 30px rgba(0,0,0,0.08); 
+        padding: 40px; 
+        display: grid; 
+        grid-template-columns: 1fr 1fr; 
+        gap: 40px; 
+        border-top: 6px solid #f9b233; 
+    }
+    
+    h2 { color: #002147; margin-bottom: 20px; border-bottom: 2px solid #eee; padding-bottom: 10px; }
+    label { font-size: 0.9rem; color: #666; font-weight: 600; display: block; margin-top: 15px; }
+    
+    input { width: 100%; padding: 12px; margin-top: 5px; border: 1px solid #ddd; border-radius: 8px; box-sizing: border-box; font-family: inherit; }
+    
+    /* Botones */
+    .btn-save { background: #002147; color: white; border: none; padding: 12px 25px; border-radius: 30px; cursor: pointer; margin-top: 20px; font-weight: 600; width: 100%; transition: 0.3s; }
+    .btn-save:hover { background: #f9b233; color: #002147; }
+    
+    .btn-reset { background: #d32f2f; width: 100%; margin-top: 0; } /* Ajustado para que se vea bien solo */
+    .btn-reset:hover { background: #b71c1c; }
+
+    /* Alertas */
+    .alert { padding: 15px; border-radius: 8px; margin-bottom: 20px; text-align: center; font-weight: bold; grid-column: 1 / -1; }
+    .success { background: #e8f5e9; color: #2e7d32; border: 1px solid #c8e6c9; }
+    .error { background: #ffebee; color: #c62828; border: 1px solid #ffcdd2; }
+
+    .back-link { grid-column: 1 / -1; text-align: center; margin-top: 20px; }
+    .back-link a { text-decoration: none; color: #777; font-size: 0.9rem; }
+    .back-link a:hover { color: #002147; }
+
+    /* Info Usuario */
+    .user-id-info {
+        grid-column: 1 / -1;
+        text-align: center;
+        color: #888;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+
+    @media (max-width: 768px) { .profile-container { grid-template-columns: 1fr; } }
+  </style>
+</head>
+<body>
+
+  <div class="profile-container">
+    {% if mensaje %} <div class="alert success">{{ mensaje }}</div> {% endif %}
+    {% if error %} <div class="alert error">{{ error }}</div> {% endif %}
+
+    <div class="user-id-info">
+        Usuario: <b>{{ user.username }}</b>
+    </div>
+
+    <!-- COLUMNA 1: DATOS PERSONALES -->
+    <div>
+      <h2>Mis Datos</h2>
+      <form method="POST">
+        {% csrf_token %}
+        <input type="hidden" name="update_info" value="1">
+        
+        <label>Nombre Completo</label>
+        <input type="text" name="nombre" value="{{ user.first_name }}" required>
+        
+        <label>Correo Institucional</label>
+        <input type="email" name="correo" value="{{ user.email }}" required>
+        
+        <button type="submit" class="btn-save">Guardar Cambios</button>
+      </form>
+    </div>
+
+    <!-- COLUMNA 2: SEGURIDAD (SOLO BOTÓN RESTABLECER) -->
+    <div>
+      <h2>Contraseña</h2>
+      
+      <div style="background: #f9f9f9; padding: 20px; border-radius: 10px; text-align: center; border: 1px solid #eee;">
+          <p style="font-size: 0.95rem; color: #555; margin-bottom: 20px;">
+            Para cambiar tu contraseña, utiliza el sistema de restablecimiento seguro.
+          </p>
+          
+          <!-- Botón único para ir a restablecer -->
+          <a href="{% url 'recuperar' %}" style="text-decoration: none;">
+            <button type="button" class="btn-save btn-reset">Ir a Restablecer Contraseña</button>
+          </a>
+      </div>
+    </div>
+
+    <div class="back-link">
+      <a href="{% url 'home' %}">← Volver al Inicio</a> | 
+      <a href="{% url 'logout' %}" style="color:red;">Cerrar Sesión</a>
+    </div>
+  </div>
+
+</body>
+</html>

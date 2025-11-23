@@ -1,0 +1,169 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Iniciar Sesión | Mapa UAM Mante</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(135deg, #ffffff, #f8f9fa);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .login-container {
+      background: #ffffff;
+      border-radius: 20px;
+      box-shadow: 0 10px 25px rgba(0,0,0,0.1);
+      padding: 50px 60px;
+      text-align: center;
+      width: 100%;
+      max-width: 400px;
+      border-top: 6px solid #f9b233;
+    }
+
+    h2 {
+      margin-bottom: 30px;
+      font-size: 1.8rem;
+      color: #002147;
+      font-weight: 600;
+    }
+
+    input[type="text"], input[type="password"] {
+      width: 100%;
+      padding: 14px 15px;
+      margin: 10px 0;
+      border: 2px solid #ccc;
+      border-radius: 10px;
+      font-size: 1rem;
+      transition: all 0.3s ease;
+    }
+
+    input:focus {
+      border-color: #f9b233;
+      outline: none;
+      box-shadow: 0 0 8px rgba(249, 178, 51, 0.4);
+    }
+
+    button {
+      width: 100%;
+      background-color: #002147;
+      color: #f9b233;
+      border: none;
+      padding: 14px 0;
+      border-radius: 50px;
+      font-size: 1.1rem;
+      font-weight: 600;
+      cursor: pointer;
+      margin-top: 20px;
+      transition: all 0.3s ease;
+    }
+
+    button:hover {
+      background-color: #f9b233;
+      color: #002147;
+      transform: scale(1.05);
+      box-shadow: 0 0 10px rgba(249, 178, 51, 0.5);
+    }
+
+    .guest-btn {
+      display: block; /* Para que se comporte como bloque */
+      width: 100%; /* Mismo ancho que los inputs */
+      box-sizing: border-box; /* Para que el padding no afecte el ancho */
+      background-color: #6c757d;
+      color: #fff;
+      margin-top: 15px;
+      padding: 14px 0;
+      border-radius: 50px; /* Misma redondez */
+      font-size: 1.1rem;
+      font-weight: 600;
+      text-decoration: none;
+      border: none;
+      cursor: pointer;
+      transition: all 0.3s ease;
+    }
+
+    .guest-btn:hover {
+      background-color: #5a6268;
+      color: #fff;
+      transform: scale(1.05);
+      box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+    }
+
+    footer {
+      position: absolute;
+      bottom: 20px;
+      text-align: center;
+      font-size: 0.9rem;
+      color: #555;
+      width: 100%;
+    }
+
+    /* Estilo extra para mensajes de error (sin romper lo demás) */
+    .error-msg {
+      background-color: #ffebee;
+      color: #c62828;
+      padding: 10px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      font-size: 0.9rem;
+      border: 1px solid #ef9a9a;
+    }
+    
+    /* Estilo para el enlace de recuperar contraseña */
+    .forgot-pass {
+        display: block;
+        margin-top: 10px;
+        font-size: 0.9rem;
+        color: #d32f2f;
+        text-decoration: none;
+        margin-bottom: 10px;
+    }
+    .forgot-pass:hover {
+        text-decoration: underline;
+    }
+  </style>
+</head>
+<body>
+  <div class="login-container">
+    <h2>Iniciar Sesión</h2>
+
+    <!-- Mensaje de Error si falla el login -->
+    {% if error %}
+      <div class="error-msg">{{ error }}</div>
+    {% endif %}
+
+    <form method="POST">
+      {% csrf_token %}
+      <!-- Cambiamos los inputs para que coincidan con el backend -->
+      <input type="text" id="nombre" name="username" placeholder="Matrícula (Ej. a12312984)" required>
+      <input type="password" id="password" name="password" placeholder="Contraseña" required>
+      
+      <!-- Enlace nuevo de recuperar -->
+      <a href="{% url 'recuperar' %}" class="forgot-pass">¿Olvidaste tu contraseña?</a>
+
+      <button type="submit">Entrar</button>
+    </form>
+
+    <!-- Botón de invitado convertido a enlace Django -->
+    <a href="{% url 'invitado' %}" class="guest-btn">Entrar como invitado</a>
+
+    <!-- Enlace al Registro -->
+    <div style="margin-top: 20px; font-size: 0.9rem;">
+        ¿No tienes cuenta? <a href="{% url 'registro' %}" style="color: #002147; font-weight: bold;">Regístrate aquí</a>
+    </div>
+
+    <a href="{% url 'home' %}" style="display:block; margin-top:15px; color:#999; text-decoration:none; font-size:0.8rem;">← Volver al Inicio</a>
+  </div>
+
+  <footer>© 2025 Universidad Autónoma de Tamaulipas | UAM Mante</footer>
+
+</body>
+</html>

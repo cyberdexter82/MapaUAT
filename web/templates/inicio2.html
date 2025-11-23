@@ -1,0 +1,76 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mapa Interactivo UAM Mante</title>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;600&display=swap" rel="stylesheet">
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Poppins', sans-serif; }
+    body, html { height: 100%; background: linear-gradient(135deg, #ffffff 60%, #f9b23320 100%); color: #333; display: flex; flex-direction: column; align-items: center; }
+    
+    nav { width: 100%; display: flex; justify-content: flex-end; padding: 20px 40px; position: absolute; top: 0; right: 0; z-index: 20; align-items: center; }
+    nav a { text-decoration: none; color: #002147; font-weight: 600; margin-left: 30px; font-size: 1.1rem; transition: color 0.3s ease; }
+    nav a:hover { color: #f9b233; }
+    
+    header { width: 100%; display: flex; justify-content: space-between; align-items: flex-end; padding: 60px 40px 20px; position: absolute; top: 0; left: 0; z-index: 10; pointer-events: none; }
+    .logo { width: 140px; height: auto; pointer-events: auto; }
+    
+    .container { display: flex; flex-direction: column; justify-content: center; align-items: center; height: 100vh; text-align: center; padding: 20px; margin-top: 20px; }
+    .card { background: rgba(255, 255, 255, 0.95); padding: 50px 70px; border-radius: 25px; border: 2px solid #f9b233; box-shadow: 0 10px 30px rgba(0,0,0,0.1); max-width: 700px; width: 90%; }
+    h1 { color: #002147; font-size: 2.8rem; margin-bottom: 20px; }
+    h1 span { color: #f9b233; }
+    p { color: #555; font-size: 1.15rem; margin-bottom: 40px; }
+    
+    .start-button { background-color: #f9b233; border: none; color: white; padding: 15px 55px; border-radius: 40px; font-size: 1.2rem; font-weight: 600; text-decoration: none; cursor: pointer; box-shadow: 0 4px 10px rgba(0,0,0,0.2); transition: all 0.3s ease; display: inline-block; }
+    .start-button:hover { background-color: #002147; color: #f9b233; transform: scale(1.05); }
+    
+    footer { margin-top: 40px; font-size: 0.9rem; color: #777; }
+    .user-badge { background: #e3f2fd; padding: 8px 15px; border-radius: 20px; font-size: 0.9rem; color: #0d47a1; margin-left: 20px; border: 1px solid #bbdefb; }
+
+    @media (max-width: 768px) {
+      nav { justify-content: center; padding: 15px; background: rgba(255,255,255,0.9); font-size: 0.9rem; flex-wrap: wrap; }
+      nav a { margin-left: 15px; margin-bottom: 5px; }
+      header { padding-top: 80px; }
+      .logo { width: 80px; }
+      .card { padding: 30px 20px; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav>
+    <a href="{% url 'home' %}">Inicio</a>
+    <a href="{% url 'instrucciones' %}">Instrucciones</a>
+    <a href="{% url 'invitado' %}">Invitado</a>
+    
+    {% if user.is_authenticated %}
+        <span class="user-badge">Hola, {{ user.first_name }}</span>
+        <a href="{% url 'perfil' %}" style="color: #002147;">Mi Perfil</a>
+        <a href="{% url 'logout' %}" style="color: #d32f2f;">Cerrar Sesión</a>
+    {% else %}
+        <a href="{% url 'registro' %}">Registrarse</a>
+        <a href="{% url 'login' %}" style="color: #f9b233;">Iniciar Sesión</a>
+    {% endif %}
+  </nav>
+
+  <header>
+    <img src="{% static 'img/logo_izquierda.jpg' %}" alt="UAT" class="logo" onerror="this.style.display='none'">
+    <img src="{% static 'img/logo_derecha.jpg' %}" alt="Facultad" class="logo" onerror="this.style.display='none'">
+  </header>
+
+  <div class="container">
+    <div class="card">
+      <h1>Mapa Interactivo <br><span>UAM Mante</span></h1>
+      <p>Explora las instalaciones de la <b>Unidad Académica Multidisciplinaria Mante</b>.</p>
+      
+      <!-- AQUÍ ESTÁ EL CAMBIO: Ambos botones llevan a instrucciones -->
+      {% if user.is_authenticated %}
+         <a href="{% url 'instrucciones' %}" class="start-button">Ir a Instrucciones</a>
+      {% else %}
+         <a href="{% url 'instrucciones' %}" class="start-button">Comenzar Recorrido</a>
+      {% endif %}
+    </div>
+    <footer>© 2025 Mapa Interactivo UAM Mante. Todos los derechos reservados.</footer>
+  </div>  
