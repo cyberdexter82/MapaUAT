@@ -1,0 +1,10 @@
+# Entornos virtuales y caché
+venv/
+__pycache__/
+*.pyc
+
+# Archivos específicos de Django
+db.sqlite3
+.env
+/static
+/media
